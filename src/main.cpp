@@ -18,11 +18,11 @@ PumpManager* pumpManager;
 void setup() {
   Serial.begin(115200);
 
-  networkManager = new NetworkManager();
-  networkManager->startConnection();
+  pumpManager = new PumpManager();
   lightManager = new LightManager();
-  networkManager->setLightManager(lightManager);
+  networkManager = new NetworkManager(lightManager, pumpManager);
 
+  networkManager->startConnection();
 }
 
 void loop() {

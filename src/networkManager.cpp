@@ -1,19 +1,19 @@
 #include "networkManager.h"
 #include "lightManager.h"
-
+#include "pumpManager.h"
 #include "wifiKeys.h"
 
 WiFiServer server(80);
 
-NetworkManager::NetworkManager() {
+NetworkManager::NetworkManager(LightManager* lights, PumpManager* pumps) {
+
+  lightManager = lights;
+  pumpManager = pumps;
+
   WiFi.mode(WIFI_AP);
   // WiFi.begin(SSID, Network pass)
-  WiFi.begin("Snusdays", "BetaZeta1000!");
+  WiFi.begin(SCOTTWIFI, SCOTTPASS);
   server.begin();
-}
-
-void NetworkManager::setLightManager(LightManager* manager) {
-  lightManager = manager;
 }
 
 void NetworkManager::startConnection() {
@@ -40,13 +40,15 @@ void NetworkManager::checkHttpServer() {
 
   requestValues result = parseRequest(request);
   client.write("HTTP/1.0 200 OK\n\nFuck you buddy: ");
-  client.write(String(result.ledCount).c_str());
+  client.write(String(result.lights).c_str());
 
   // apply leds
   if (lightManager != 0) {
-    lightManager->applyLeds(result);
+    lightManager->activate(result.lights);
   }
-
+  if (pumpManager != 0) {
+    pumpManager->activate(result.pump);
+  }
 }
 
 /*
@@ -78,12 +80,12 @@ struct requestValues NetworkManager::parseRequest(String request) {
 
   // Extract properties from JSON
   JsonObject& root = jsonBuffer.parseObject(requestStr.substring(jsonIndex));
-  int count = root["LedCount"].as<int>();
-  int bright = root["Brightness"].as<int>();
+  bool lights = root["Lights"].as<bool>();
+  bool pump = root["Pump"].as<bool>();
 
   requestValues a;
-  a.ledCount = count;
-  a.brightness = bright;
+  a.lights = lights;
+  a.pump = pump;
 
   return a;
 }

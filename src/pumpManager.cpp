@@ -6,8 +6,10 @@ PumpManager::PumpManager() {
 
 void PumpManager::activate(bool on) {
   if (on) {
+    Serial.println("Turning pump on");
     digitalWrite(PUMP_PIN, HIGH);
   } else {
+    Serial.println("Turning pump off");
     digitalWrite(PUMP_PIN, LOW);
   }
 }
