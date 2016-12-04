@@ -1,3 +1,4 @@
+#pragma once
 #include "FastLED.h"
 
 #define BRIGHTNESS 255
@@ -10,8 +11,6 @@ private:
   int numLit;
   CRGB leds[NUM_LEDS];
 
-  // Set to true when applyLeds is called to turn off any effects
-  bool isChanging;
 public:
 
   // Constructors
