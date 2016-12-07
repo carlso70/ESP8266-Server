@@ -7,8 +7,10 @@ LightManager::LightManager() {
 
 void LightManager::activate(bool on) {
   if (on) {
+    Serial.println("Turning lights on");
     digitalWrite(LED_PIN, HIGH);
   } else {
+    Serial.println("Turning lights off");
     digitalWrite(LED_PIN, LOW);
   }
 }

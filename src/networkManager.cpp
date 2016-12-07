@@ -6,17 +6,20 @@
 WiFiServer server(80);
 
 NetworkManager::NetworkManager(LightManager* lights, PumpManager* pumps) {
-
   lightManager = lights;
   pumpManager = pumps;
 
-  WiFi.mode(WIFI_AP);
   // WiFi.begin(SSID, Network pass)
-  WiFi.begin(SCOTTWIFI, SCOTTPASS);
+  /*
+  WiFi.begin(ANVILWIFI, ANVILPASS);
   server.begin();
+  */
 }
 
-void NetworkManager::startConnection() {
+void NetworkManager::startConnection(String SSID, String PASS) {
+  WiFi.begin(SSID.c_str(), PASS.c_str());
+  server.begin();
+
   Serial.println("Connecting...");
   while(WiFi.status() != WL_CONNECTED) {
     delay(50);
@@ -30,7 +33,7 @@ void NetworkManager::checkHttpServer() {
   WiFiClient client = server.available();
   if (!client) {
     if (WiFi.status() != WL_CONNECTED) {
-      startConnection();
+      //TODO reset and go back access point
     }
     return;
   }
@@ -61,14 +64,14 @@ struct requestValues NetworkManager::parseRequest(String request) {
   char lastChar = 0;
   int bodyIndex = -1;
   for (int i = 3; i < request.length(); i++) {
-     String before(request.substring(i - 5, i));
-     if (before.endsWith("\r\n\r\n") || before.endsWith("\n\n")) {
-       bodyIndex = i;
-       break;
-     }
+    String before(request.substring(i - 5, i));
+    if (before.endsWith("\r\n\r\n") || before.endsWith("\n\n")) {
+      bodyIndex = i;
+      break;
+    }
   }
 
-//TODO create exceptions for when there is no body found
+  //TODO create exceptions for when there is no body found
   if (bodyIndex < 0) {
     Serial.println("NO BODY FOUND");
   }
@@ -82,12 +85,99 @@ struct requestValues NetworkManager::parseRequest(String request) {
   JsonObject& root = jsonBuffer.parseObject(requestStr.substring(jsonIndex));
   bool lights = root["Lights"].as<bool>();
   bool pump = root["Pump"].as<bool>();
+  String ssid = root["SSID"].asString();
+  String key = root["Key"].asString();
 
   requestValues a;
+
   a.lights = lights;
   a.pump = pump;
+  a.ssid = ssid;
+  a.key = key;
 
   return a;
+}
+
+void NetworkManager::setupAccessPoint()
+{
+  WiFi.mode(WIFI_AP);
+
+  // Do a little work to get a unique-ish name. Append the
+  // last two bytes of the MAC (HEX'd) to "Thing-":
+  uint8_t mac[WL_MAC_ADDR_LENGTH];
+  WiFi.softAPmacAddress(mac);
+  String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
+  String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
+  macID.toUpperCase();
+  String AP_NameString = "ESP8266 Hydro Thing " + macID;
+
+  char AP_NameChar[AP_NameString.length() + 1];
+  memset(AP_NameChar, 0, AP_NameString.length() + 1);
+
+  for (int i=0; i<AP_NameString.length(); i++)
+  AP_NameChar[i] = AP_NameString.charAt(i);
+
+  WiFi.softAP(AP_NameChar, WiFiAPPSK);
+
+  server.begin();
+}
+
+void NetworkManager::checkAccessPoint() {
+  WiFiClient client = server.available();
+  if (!client) {
+    delay(50);
+    return;
+  }
+
+  String request = client.readString();
+  requestValues result = parseRequest(request);
+
+  // Attempt to start connection with values
+  if (result.ssid != NULL) {
+    startConnection(result.ssid, result.key);
+  }
+
+  client.flush();
+  
+  // Prepare the response. Start with the common header:
+  String s = "HTTP/1.1 200 OK\r\n";
+  s += "Content-Type: text/html\r\n\r\n";
+  s += "<!DOCTYPE HTML>\r\n<html>\r\n";
+  s += scanWifi();
+  s += "Fuck you buddy";
+  s += "</html>\n";
+
+  // Send the response to the client
+  client.print(s);
+  delay(1);
+  Serial.println("Client disonnected");
+
+  // The client will actually be disconnected
+  // when the function returns and 'client' object is detroyed
+}
+
+String NetworkManager::scanWifi() {
+  int n = WiFi.scanNetworks();
+  if (n == 0) {
+    return "No networks found";
+  }
+
+  String s = "Found ";
+  s += String(n);
+  s += " networks <br>";
+  for (int i = 0; i < n; i++) {
+
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.print(WiFi.SSID(i));
+    Serial.print("\n");
+
+    s += String(i + 1);
+    s += ": ";
+    s += WiFi.SSID(i);
+    s += "<br>";
+  }
+  return s;
 }
 
 NetworkManager::~NetworkManager() {}
