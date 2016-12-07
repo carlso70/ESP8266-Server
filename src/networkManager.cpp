@@ -8,22 +8,24 @@ WiFiServer server(80);
 NetworkManager::NetworkManager(LightManager* lights, PumpManager* pumps) {
   lightManager = lights;
   pumpManager = pumps;
-
-  // WiFi.begin(SSID, Network pass)
-  /*
-  WiFi.begin(ANVILWIFI, ANVILPASS);
-  server.begin();
-  */
 }
 
 void NetworkManager::startConnection(String SSID, String PASS) {
-  WiFi.begin(SSID.c_str(), PASS.c_str());
-  server.begin();
+  // Will not return until wifi connetion succeeds or fails
+  int status = WiFi.begin(SSID.c_str(), PASS.c_str());
+
+  bool isConnected = status == WL_CONNECTED;
+
+  if(!isConnected) {
+    Serial.println("Connection failed");
+    return;
+  }
 
   Serial.println("Connecting...");
-  while(WiFi.status() != WL_CONNECTED) {
-    delay(50);
-  }
+
+  // disable the access point
+  WiFi.softAPdisconnect(true);
+
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
@@ -138,7 +140,7 @@ void NetworkManager::checkAccessPoint() {
   }
 
   client.flush();
-  
+
   // Prepare the response. Start with the common header:
   String s = "HTTP/1.1 200 OK\r\n";
   s += "Content-Type: text/html\r\n\r\n";
