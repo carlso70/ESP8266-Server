@@ -12,11 +12,17 @@ NetworkManager::NetworkManager(LightManager* lights, PumpManager* pumps) {
 
 void NetworkManager::startConnection(String SSID, String PASS) {
   // Will not return until wifi connetion succeeds or fails
+  Serial.print("SSID = ");
+  Serial.print(SSID);
+  Serial.print(" Pass = ");
+  Serial.print(PASS);
+
   int status = WiFi.begin(SSID.c_str(), PASS.c_str());
 
   bool isConnected = status == WL_CONNECTED;
 
-  if(!isConnected) {
+  delay(10000);
+  if(WiFi.status() != WL_CONNECTED) {
     Serial.println("Connection failed");
     return;
   }
@@ -125,6 +131,13 @@ void NetworkManager::setupAccessPoint()
 }
 
 void NetworkManager::checkAccessPoint() {
+  if (WiFi.getMode() != WIFI_AP) {
+    setupAccessPoint();
+    delay(50);
+  }
+
+  Serial.println("Checking ap \n\n\n");
+
   WiFiClient client = server.available();
   if (!client) {
     delay(50);

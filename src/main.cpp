@@ -29,6 +29,10 @@ void setup() {
 }
 
 void loop() {
-//  networkManager->checkHttpServer();
-  networkManager->checkAccessPoint();
+  //  networkManager->checkHttpServer();
+  if (WiFi.status() != WL_CONNECTED) {
+    networkManager->checkAccessPoint();
+  }else {
+    networkManager->checkHttpServer();
+  }
 }
