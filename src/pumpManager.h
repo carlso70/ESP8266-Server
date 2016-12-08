@@ -7,7 +7,7 @@ public:
   PumpManager();
 
   // Turns the pump on and off
-  void activate(bool on);
+  void activate(int on);
 
   ~PumpManager();
 };

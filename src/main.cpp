@@ -17,7 +17,6 @@ PumpManager* pumpManager;
 
 void setup() {
   Serial.begin(115200);
-
   pumpManager = new PumpManager();
   lightManager = new LightManager();
   networkManager = new NetworkManager(lightManager, pumpManager);
@@ -27,4 +26,5 @@ void setup() {
 
 void loop() {
   networkManager->checkHttpServer();
+
 }

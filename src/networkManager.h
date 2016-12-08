@@ -5,8 +5,8 @@
 #include "ESP8266WiFi.h"
 
 struct requestValues {
-  bool lights;
-  bool pump;
+  int lights = 0;
+  int pump = 0;
 };
 
 class NetworkManager {

@@ -5,8 +5,8 @@ LightManager::LightManager() {
   pinMode(LED_PIN, OUTPUT);
 }
 
-void LightManager::activate(bool on) {
-  if (on) {
+void LightManager::activate(int on) {
+  if (on == 1) {
     digitalWrite(LED_PIN, HIGH);
   } else {
     digitalWrite(LED_PIN, LOW);

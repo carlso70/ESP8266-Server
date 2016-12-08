@@ -1,6 +1,6 @@
 #pragma once
 
-#define LED_PIN D0
+#define LED_PIN D2
 
 class LightManager {
 public:
@@ -10,5 +10,5 @@ public:
   ~LightManager();
 
   // Turn the lights on and off
-  void activate(bool on);
+  void activate(int on);
 };
