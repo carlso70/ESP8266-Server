@@ -1,5 +1,6 @@
 #pragma once
 
+#include <WiFiUdp.h>
 #include "ArduinoJson.h"
 #include <Arduino.h>
 #include "ESP8266WiFi.h"
@@ -31,6 +32,8 @@ public:
 
   void setupAccessPoint();
   void checkAccessPoint();
+
+  void checkUDPPackets();
 
   String scanWifi();
   // Returns a requestValues struct that contains the Json data

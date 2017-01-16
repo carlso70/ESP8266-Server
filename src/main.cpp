@@ -34,5 +34,6 @@ void loop() {
     networkManager->checkAccessPoint();
   }else {
     networkManager->checkHttpServer();
+    networkManager->checkUDPPackets();
   }
 }

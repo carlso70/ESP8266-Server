@@ -1,7 +1,11 @@
 #include "networkManager.h"
 #include "lightManager.h"
 #include "pumpManager.h"
-#include "wifiKeys.h"
+
+WiFiUDP Udp;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char incomingPacket[255];  // buffer for incoming packets
+char  replyPacekt[] = "Hi there! Got the message :-)";  // a reply string to send back
 
 WiFiServer server(80);
 
@@ -35,6 +39,9 @@ void NetworkManager::startConnection(String SSID, String PASS) {
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
+
+  Udp.begin(localUdpPort);
+  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 }
 
 void NetworkManager::checkHttpServer() {
@@ -42,9 +49,14 @@ void NetworkManager::checkHttpServer() {
   if (!client) {
     if (WiFi.status() != WL_CONNECTED) {
       //TODO reset and go back access point
+
     }
     return;
   }
+
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
   String request = client.readString();
   Serial.print("Recieved request: ");
   Serial.println(request);
@@ -136,7 +148,7 @@ void NetworkManager::checkAccessPoint() {
     delay(50);
   }
 
-  Serial.println("Checking ap \n\n\n");
+  Serial.println("Checking ap \n\n");
 
   WiFiClient client = server.available();
   if (!client) {
@@ -193,6 +205,29 @@ String NetworkManager::scanWifi() {
     s += "<br>";
   }
   return s;
+}
+
+void NetworkManager::checkUDPPackets(){
+  int packetSize = Udp.parsePacket();
+  if (packetSize)
+  {
+    // receive incoming UDP packets
+    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+    int len = Udp.read(incomingPacket, 255);
+    if (len > 0)
+    {
+      incomingPacket[len] = 0;
+    }
+    Serial.printf("UDP packet contents: %s\n", incomingPacket);
+
+    // send back a reply, to the IP address and port we got the packet from
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    if (incomingPacket[0] = 'I'){
+      Udp.write(WiFi.localIP().toString().c_str());
+      Serial.println("Recieved Packet");
+      Udp.endPacket();
+    }
+  }
 }
 
 NetworkManager::~NetworkManager() {}
