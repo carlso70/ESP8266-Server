@@ -5,7 +5,7 @@
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  // local port to listen on
 char incomingPacket[255];  // buffer for incoming packets
-char  replyPacekt[] = "Hi there! Got the message :-)";  // a reply string to send back
+char replyPacekt[] = "Hi there! Got the message :-)";  // a reply string to send back
 
 WiFiServer server(80);
 
@@ -14,7 +14,10 @@ NetworkManager::NetworkManager(LightManager* lights, PumpManager* pumps) {
   pumpManager = pumps;
 }
 
-void NetworkManager::startConnection(String SSID, String PASS) {
+/* Attempts to connect to local WiFi with name SSID, and pass PASS.
+* Returns false if failed
+*/
+bool NetworkManager::startConnection(String SSID, String PASS) {
   // Will not return until wifi connetion succeeds or fails
   Serial.print("SSID = ");
   Serial.print(SSID);
@@ -28,13 +31,11 @@ void NetworkManager::startConnection(String SSID, String PASS) {
   delay(10000);
   if(WiFi.status() != WL_CONNECTED) {
     Serial.println("Connection failed");
-    return;
+
+    return false;
   }
 
   Serial.println("Connecting...");
-
-  // disable the access point
-  WiFi.softAPdisconnect(true);
 
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
@@ -42,8 +43,15 @@ void NetworkManager::startConnection(String SSID, String PASS) {
 
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+
+  return true;
 }
 
+
+/*
+*  Checks the HTTP Server that is connected to the WiFi. Awaits JSON Responses
+*  Does not check when in Access Point Mode
+*/
 void NetworkManager::checkHttpServer() {
   WiFiClient client = server.available();
   if (!client) {
@@ -118,6 +126,10 @@ struct requestValues NetworkManager::parseRequest(String request) {
   return a;
 }
 
+/*
+* Sets up device to function as a local Access Point. Awaits for requests to
+* Connect to user's Wifi
+*/
 void NetworkManager::setupAccessPoint()
 {
   WiFi.mode(WIFI_AP);
@@ -129,7 +141,7 @@ void NetworkManager::setupAccessPoint()
   String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
   String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
   macID.toUpperCase();
-  String AP_NameString = "ESP8266 Hydro Thing " + macID;
+  String AP_NameString = "HydroGrow";
 
   char AP_NameChar[AP_NameString.length() + 1];
   memset(AP_NameChar, 0, AP_NameString.length() + 1);
@@ -142,6 +154,10 @@ void NetworkManager::setupAccessPoint()
   server.begin();
 }
 
+/*
+*  Checks the Access Point for JSON requests with SSID and PASS to
+*  local Network
+*/
 void NetworkManager::checkAccessPoint() {
   if (WiFi.getMode() != WIFI_AP) {
     setupAccessPoint();
@@ -157,30 +173,16 @@ void NetworkManager::checkAccessPoint() {
   }
 
   String request = client.readString();
+  client.flush();
   requestValues result = parseRequest(request);
+  bool didSucceed = false;
 
   // Attempt to start connection with values
   if (result.ssid != NULL) {
-    startConnection(result.ssid, result.key);
+    didSucceed = startConnection(result.ssid, result.key);
   }
 
-  client.flush();
-
-  // Prepare the response. Start with the common header:
-  String s = "HTTP/1.1 200 OK\r\n";
-  s += "Content-Type: text/html\r\n\r\n";
-  s += "<!DOCTYPE HTML>\r\n<html>\r\n";
-  s += scanWifi();
-  s += "Fuck you buddy";
-  s += "</html>\n";
-
-  // Send the response to the client
-  client.print(s);
-  delay(1);
-  Serial.println("Client disonnected");
-
-  // The client will actually be disconnected
-  // when the function returns and 'client' object is detroyed
+  WiFi.softAPdisconnect(didSucceed);
 }
 
 String NetworkManager::scanWifi() {
@@ -205,6 +207,15 @@ String NetworkManager::scanWifi() {
     s += "<br>";
   }
   return s;
+}
+
+// send out udp packets telling that you are in access point mode, and need to be
+// connected to wifi
+void NetworkManager::sendSetupPackets() {
+  Udp.beginPacket(Udp.remoteIP(), localUdpPort);
+  Udp.write("In access point mode");
+  Udp.endPacket();
+  delay(100);
 }
 
 void NetworkManager::checkUDPPackets(){

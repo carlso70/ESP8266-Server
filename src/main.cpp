@@ -32,6 +32,7 @@ void loop() {
   //  networkManager->checkHttpServer();
   if (WiFi.status() != WL_CONNECTED) {
     networkManager->checkAccessPoint();
+    networkManager->sendSetupPackets();
   }else {
     networkManager->checkHttpServer();
     networkManager->checkUDPPackets();

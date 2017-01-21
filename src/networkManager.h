@@ -28,11 +28,12 @@ public:
   void setPumpManager(PumpManager* manager);
 
   void checkHttpServer();
-  void startConnection(String SSID, String PASS);
+  bool startConnection(String SSID, String PASS);
 
   void setupAccessPoint();
   void checkAccessPoint();
 
+  void sendSetupPackets();
   void checkUDPPackets();
 
   String scanWifi();
