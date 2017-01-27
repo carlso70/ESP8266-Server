@@ -10,6 +10,7 @@ struct requestValues {
   bool pump;
   String ssid;
   String key;
+
 };
 
 const char WiFiAPPSK[] = "sparkfun";

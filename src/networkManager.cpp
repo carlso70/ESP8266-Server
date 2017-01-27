@@ -74,12 +74,8 @@ void NetworkManager::checkHttpServer() {
   client.write(String(result.lights).c_str());
 
   // apply leds
-  if (lightManager != 0) {
-    lightManager->activate(result.lights);
-  }
-  if (pumpManager != 0) {
-    pumpManager->activate(result.pump);
-  }
+  lightManager->activate(result.lights);
+  pumpManager->activate(result.pump);
 }
 
 /*
@@ -111,10 +107,11 @@ struct requestValues NetworkManager::parseRequest(String request) {
 
   // Extract properties from JSON
   JsonObject& root = jsonBuffer.parseObject(requestStr.substring(jsonIndex));
+
   bool lights = root["Lights"].as<bool>();
   bool pump = root["Pump"].as<bool>();
   String ssid = root["SSID"].asString();
-  String key = root["Key"].asString();
+  String key = root["Key"].asString()
 
   requestValues a;
 
