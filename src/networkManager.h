@@ -1,13 +1,19 @@
 #pragma once
 
+#include <WiFiUdp.h>
 #include "ArduinoJson.h"
 #include <Arduino.h>
 #include "ESP8266WiFi.h"
 
 struct requestValues {
-  int lights = 0;
-  int pump = 0;
+  bool lights;
+  bool pump;
+  String ssid;
+  String key;
+
 };
+
+const char WiFiAPPSK[] = "sparkfun";
 
 class NetworkManager {
 private:
@@ -23,7 +29,15 @@ public:
   void setPumpManager(PumpManager* manager);
 
   void checkHttpServer();
+  bool startConnection(String SSID, String PASS);
+
+  void setupAccessPoint();
+  void checkAccessPoint();
+
+  void sendSetupPackets();
+  void checkUDPPackets();
+
+  String scanWifi();
   // Returns a requestValues struct that contains the Json data
   struct requestValues parseRequest(String request);
-  void startConnection();
 };

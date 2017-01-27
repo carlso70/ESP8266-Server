@@ -5,10 +5,12 @@ LightManager::LightManager() {
   pinMode(LED_PIN, OUTPUT);
 }
 
-void LightManager::activate(int on) {
-  if (on == 1) {
+void LightManager::activate(bool on) {
+  if (on) {
+    Serial.println("Turning lights on");
     digitalWrite(LED_PIN, HIGH);
   } else {
+    Serial.println("Turning lights off");
     digitalWrite(LED_PIN, LOW);
   }
 }

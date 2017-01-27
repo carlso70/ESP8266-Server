@@ -1,6 +1,5 @@
 #include <Arduino.h>
-#include <String>
-#include "FastLED.h"
+#include <ESP8266WiFi.h>
 #include "pumpManager.h"
 #include "networkManager.h"
 #include "lightManager.h"
@@ -21,10 +20,21 @@ void setup() {
   lightManager = new LightManager();
   networkManager = new NetworkManager(lightManager, pumpManager);
 
+  networkManager->setupAccessPoint();
+
+  /*
   networkManager->startConnection();
+  */
 }
 
 void loop() {
-  networkManager->checkHttpServer();
 
+  //  networkManager->checkHttpServer();
+  if (WiFi.status() != WL_CONNECTED) {
+    networkManager->checkAccessPoint();
+    networkManager->sendSetupPackets();
+  }else {
+    networkManager->checkHttpServer();
+    networkManager->checkUDPPackets();
+  }
 }
